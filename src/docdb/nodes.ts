@@ -48,12 +48,12 @@ export class DocDBServerNode implements INode {
 
 	async getChildren(): Promise<INode[]> {
 		let client = new DocumentClient(this.getEndpoint(), { masterKey: this.getPrimaryMasterKey() });
-		return await DocDBServerNode.getDocDBDatabaseNodes(client, this.getPrimaryMasterKey(), this.getEndpoint());
+		return await DocDBServerNode.getDocDBDatabaseNodes(client, this.getPrimaryMasterKey(), this.getEndpoint(), this);
 	}
 
-	static async getDocDBDatabaseNodes(client: DocumentClient, masterKey: string, endpoint: string): Promise<INode[]> {
+	static async getDocDBDatabaseNodes(client: DocumentClient, masterKey: string, endpoint: string, server: INode): Promise<INode[]> {
 		let databases = await DocDBServerNode.listDatabases(client);
-		return databases.map(database => new DocDBDatabaseNode(database.id, masterKey, endpoint));
+		return databases.map(database => new DocDBDatabaseNode(database.id, masterKey, endpoint, server));
 	}
 
 	static async listDatabases(client): Promise<any[]> {
@@ -66,9 +66,9 @@ export class DocDBServerNode implements INode {
 }
 
 export class DocDBDatabaseNode implements INode {
-	readonly contextValue: string = 'DocDbDatabase';
+	readonly contextValue: string = 'DocDBDatabase';
 
-	constructor(readonly id: string, readonly _primaryMasterKey: string, readonly _endPoint: string) {
+	constructor(readonly id: string, readonly _primaryMasterKey: string, readonly _endPoint: string, readonly server: INode) {
 	}
 
 	getPrimaryMasterKey(): string {
@@ -77,7 +77,6 @@ export class DocDBDatabaseNode implements INode {
 	getEndpoint(): string {
 		return this._endPoint;
 	}
-
 
 	get label(): string {
 		return this.id;
@@ -120,7 +119,7 @@ export class DocDBCollectionNode implements INode {
 	constructor(readonly id: string, readonly db: DocDBDatabaseNode) {
 	}
 
-	readonly contextValue: string = 'DocDbCollection';
+	readonly contextValue: string = 'DocDBCollection';
 
 	get label(): string {
 		return this.id;

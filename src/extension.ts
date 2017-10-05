@@ -61,8 +61,8 @@ export function activate(context: vscode.ExtensionContext) {
 	vscode.window.setStatusBarMessage('Mongo: Not connected');
 	initAsyncCommand(context, 'cosmosDB.connectMongoDB', (element: MongoDatabaseNode) => connectToDatabase(element));
 	initCommand(context, 'cosmosDB.dropMongoDB', (element: MongoDatabaseNode) => dropDatabase(element));
-	initCommand(context, 'cosmosDB.dropDocDBDatabase', (element: DocDBDatabaseNode) => dropDocDBDatabase(element));
-	initCommand(context, 'cosmosDB.dropDocDBCollection', (element: DocDBCollectionNode) => dropDocDBCollection(element));
+	initAsyncCommand(context, 'cosmosDB.dropDocDBDatabase', (element: DocDBDatabaseNode) => dropDocDBDatabase(element));
+	initAsyncCommand(context, 'cosmosDB.dropDocDBCollection', (element: DocDBCollectionNode) => dropDocDBCollection(element));
 	initCommand(context, 'cosmosDB.newMongoScrapbook', () => createScrapbook());
 	initCommand(context, 'cosmosDB.executeMongoCommand', () => lastCommand = MongoCommands.executeCommandFromActiveEditor(connectedDb));
 	initCommand(context, 'cosmosDB.updateMongoDocuments', () => MongoCommands.updateDocuments(connectedDb, lastCommand));
@@ -217,11 +217,26 @@ async function createDocDBCollection(db: DocDBDatabaseNode) {
 	}
 }
 
-function dropDocDBDatabase(node: DocDBDatabaseNode): void {
+async function dropDocDBDatabase(db: DocDBDatabaseNode): Promise<void> {
+	let masterKey = db.getPrimaryMasterKey();
+	let endpoint = db.getEndpoint();
+	let client = new DocumentClient(await endpoint, { masterKey: await masterKey });
+	client.deleteDatabase(db.getDbLink(), async function (err) {
+		err ? console.log(err) : await vscode.window.showInformationMessage('Database \'' + db.id + '\'deleted ');
+		explorer.refresh(db.server);
+	});
 
 }
 
-function dropDocDBCollection(node: DocDBCollectionNode): void {
+async function dropDocDBCollection(coll: DocDBCollectionNode): Promise<void> {
+	let masterKey = coll.db.getPrimaryMasterKey();
+	let endpoint = coll.db.getEndpoint();
+	let client = new DocumentClient(await endpoint, { masterKey: await masterKey });
+	let collLink = coll.db.getDbLink() + '/colls/' + coll.id;
+	client.deleteCollection(collLink, async function (err) {
+		err ? console.log(err) : await vscode.window.showInformationMessage('Collection \'' + coll.id + '\'deleted ');
+		explorer.refresh(coll.db);
+	});
 
 }
 

@@ -131,7 +131,7 @@ export class CosmosDBResourceNode implements IMongoServer {
 		if (this._isDocDB) {
 			const masterKey = await this.getPrimaryMasterKey();
 			let client = new DocumentClient(this._databaseAccount.documentEndpoint, { masterKey: masterKey });
-			return await DocDBServerNode.getDocDBDatabaseNodes(client, masterKey, await this.getEndpoint());
+			return await DocDBServerNode.getDocDBDatabaseNodes(client, masterKey, await this.getEndpoint(), this);
 		}
 	}
 }
