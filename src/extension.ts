@@ -61,6 +61,8 @@ export function activate(context: vscode.ExtensionContext) {
 	vscode.window.setStatusBarMessage('Mongo: Not connected');
 	initAsyncCommand(context, 'cosmosDB.connectMongoDB', (element: MongoDatabaseNode) => connectToDatabase(element));
 	initCommand(context, 'cosmosDB.dropMongoDB', (element: MongoDatabaseNode) => dropDatabase(element));
+	initCommand(context, 'cosmosDB.dropDocDBDatabase', (element: DocDBDatabaseNode) => dropDocDBDatabase(element));
+	initCommand(context, 'cosmosDB.dropDocDBCollection', (element: DocDBCollectionNode) => dropDocDBCollection(element));
 	initCommand(context, 'cosmosDB.newMongoScrapbook', () => createScrapbook());
 	initCommand(context, 'cosmosDB.executeMongoCommand', () => lastCommand = MongoCommands.executeCommandFromActiveEditor(connectedDb));
 	initCommand(context, 'cosmosDB.updateMongoDocuments', () => MongoCommands.updateDocuments(connectedDb, lastCommand));
@@ -154,7 +156,10 @@ async function createMongoDatabase(server: IMongoServer) {
 }
 
 async function createDocDBDatabase(server: CosmosDBResourceNode) {
-	const databaseName = await vscode.window.showInputBox({ placeHolder: 'Database Name' });
+	const databaseName = await vscode.window.showInputBox({
+		placeHolder: 'Database Name',
+		ignoreFocusOut: true
+	});
 	if (databaseName) {
 		const masterKey = await server.getPrimaryMasterKey();
 		const endpoint = await server.getEndpoint();
@@ -173,7 +178,10 @@ async function createDocDBDatabase(server: CosmosDBResourceNode) {
 }
 
 async function createDocDBCollection(db: DocDBDatabaseNode) {
-	const collectionName = await vscode.window.showInputBox({ placeHolder: 'Collection Name' });
+	const collectionName = await vscode.window.showInputBox({
+		placeHolder: 'Collection Name',
+		ignoreFocusOut: true
+	});
 	if (collectionName) {
 		let masterKey = db.getPrimaryMasterKey();
 		let endpoint = db.getEndpoint();
@@ -207,6 +215,14 @@ async function createDocDBCollection(db: DocDBDatabaseNode) {
 			}
 		}
 	}
+}
+
+function dropDocDBDatabase(node: DocDBDatabaseNode): void {
+
+}
+
+function dropDocDBCollection(node: DocDBCollectionNode): void {
+
 }
 
 function validatePartitionKey(key: string): string | undefined | null {
