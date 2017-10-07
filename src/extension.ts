@@ -187,7 +187,7 @@ async function createDocDBCollection(db: DocDBDatabaseNode) {
 		let endpoint = db.getEndpoint();
 		let options = {};
 		let partitionKey: string = await vscode.window.showInputBox({
-			prompt: 'Partition Key: Choose a JSON property name that will possibly have a wide range of values.',
+			prompt: 'Partition Key: Choose a JSON property name that will possibly have a wide range of values',
 			ignoreFocusOut: true,
 			validateInput: validatePartitionKey
 		});
@@ -221,10 +221,16 @@ async function dropDocDBDatabase(db: DocDBDatabaseNode): Promise<void> {
 	let masterKey = db.getPrimaryMasterKey();
 	let endpoint = db.getEndpoint();
 	let client = new DocumentClient(await endpoint, { masterKey: await masterKey });
-	client.deleteDatabase(db.getDbLink(), async function (err) {
-		err ? console.log(err) : await vscode.window.showInformationMessage('Database \'' + db.id + '\'deleted ');
-		explorer.refresh(db.server);
+	let confirmed = await vscode.window.showInputBox({
+		prompt: 'Are you sure to delete Database: ' + db.label + ', and its collections?',
+		ignoreFocusOut: true
 	});
+	if (confirmed) {
+		client.deleteDatabase(db.getDbLink(), async function (err) {
+			err ? console.log(err) : await vscode.window.showInformationMessage('Database \'' + db.id + '\'deleted ');
+			explorer.refresh(db.server);
+		});
+	}
 
 }
 
@@ -233,16 +239,29 @@ async function dropDocDBCollection(coll: DocDBCollectionNode): Promise<void> {
 	let endpoint = coll.db.getEndpoint();
 	let client = new DocumentClient(await endpoint, { masterKey: await masterKey });
 	let collLink = coll.db.getDbLink() + '/colls/' + coll.id;
-	client.deleteCollection(collLink, async function (err) {
-		err ? console.log(err) : await vscode.window.showInformationMessage('Collection \'' + coll.id + '\'deleted ');
-		explorer.refresh(coll.db);
+	let confirmed = await vscode.window.showInputBox({
+		prompt: 'Are you sure to delete Collection: ' + coll.label + '?',
+		ignoreFocusOut: true
 	});
+	if (confirmed) {
 
+		client.deleteCollection(collLink, async function (err) {
+			err ? console.log(err) : await vscode.window.showInformationMessage('Collection \'' + coll.id + '\'deleted ');
+			explorer.refresh(coll.db);
+		});
+	}
+
+}
+
+function validateName(name: string): string | undefined | null {
+	if (name.length < 1 || name.length > 255) {
+		return "Name must be between 1 \& 255 characters long. "
+	}
 }
 
 function validatePartitionKey(key: string): string | undefined | null {
 	if (key[0] != '/') {
-		return "Need a leading / in the partitionKey";
+		return "Need a leading forward slash '/' in the partitionKey";
 	} else if (/^[#?\\]*$/.test(key)) {
 		return "Cannot contain these characters - ?,#,\\, etc."
 	}
