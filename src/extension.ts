@@ -246,7 +246,7 @@ async function removeMongoServer(node: INode) {
 
 async function deleteDatabase(database: MongoDatabaseNode): Promise<void> {
 	if (database) {
-		const confirmed = await vscode.window.showWarningMessage('Are you sure you want to delete database \'' + database.id + '\' and its collections?', "Yes", "No");
+		const confirmed = await vscode.window.showWarningMessage(`Are you sure you want to delete database '${database.id}' and its collections?`, "Yes");
 		if (confirmed === "Yes") {
 			if (connectedDb && connectedDb.server.id === database.server.id && connectedDb.id === database.id) {
 				connectedDb = null;

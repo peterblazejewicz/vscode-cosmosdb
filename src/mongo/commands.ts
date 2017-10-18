@@ -7,7 +7,8 @@ import * as vscode from 'vscode';
 import { ParseTree } from 'antlr4ts/tree/ParseTree';
 import { ANTLRInputStream as InputStream } from 'antlr4ts/ANTLRInputStream';
 import { CommonTokenStream } from 'antlr4ts/CommonTokenStream';
-import { MongoDatabaseNode, MongoCommand, MongoDocumentNode } from './nodes';
+import { MongoDatabaseNode, MongoCollectionNode, MongoCommand, MongoDocumentNode } from './nodes';
+import { CosmosDBExplorer } from './../explorer';
 import * as fs from 'fs';
 import * as mongoParser from './grammar/mongoParser';
 import { MongoVisitor } from './grammar/visitors';
@@ -52,15 +53,6 @@ export class MongoCommands {
 		const documents = JSON.parse(editor.document.getText());
 		currentDocumentNode.data = documents;
 		database.updateDocuments(documents, command.collection);
-		/*.then(result => {
-			editor.edit(editorBuilder => {
-				if (editor.document.lineCount > 0) {
-					const lastLine = editor.document.lineAt(editor.document.lineCount - 1);
-					editorBuilder.delete(new vscode.Range(new vscode.Position(0, 0), new vscode.Position(lastLine.range.start.line, lastLine.range.end.character)));
-				}
-				editorBuilder.insert(new vscode.Position(0, 0), result);
-			});
-		});*/
 	}
 
 	public static getCommand(content: string, position?: vscode.Position): MongoCommand {
@@ -86,6 +78,32 @@ export class MongoCommands {
 			}
 		}
 		return lastCommandOnSameLine || lastCommandBeforePosition || commands[commands.length - 1];
+	}
+
+	public static async createMongoCollection(db: MongoDatabaseNode, explorer: CosmosDBExplorer) {
+		const collectionName = await vscode.window.showInputBox({
+			placeHolder: "Enter name of collection",
+			ignoreFocusOut: true
+		});
+		db.createCollection(collectionName);
+		explorer.refresh(db);
+	}
+
+	public static async deleteMongoCollection(collection: MongoCollectionNode, explorer: CosmosDBExplorer) {
+		const confirmed = await vscode.window.showWarningMessage(`Are you sure you want to delete collection ${collection.label}?`, "Yes");
+		if (confirmed === "Yes") {
+			const db = collection.db;
+			db.dropCollection(collection.id);
+		}
+		explorer.refresh(collection.db);
+	}
+
+	public static async createMongoDocument(collection: MongoCollectionNode, explorer: CosmosDBExplorer) {
+		const docId = await vscode.window.showInputBox({
+			placeHolder: "Enter a unique id for the document.",
+			ignoreFocusOut: true
+		});
+
 	}
 }
 
