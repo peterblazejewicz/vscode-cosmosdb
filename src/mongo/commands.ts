@@ -13,7 +13,8 @@ import * as fs from 'fs';
 import * as mongoParser from './grammar/mongoParser';
 import { MongoVisitor } from './grammar/visitors';
 import { mongoLexer } from './grammar/mongoLexer';
-import * as util from './../util'
+import * as util from './../util';
+import { connectToDatabase } from '../extension'
 
 export class MongoCommands {
 
@@ -85,25 +86,31 @@ export class MongoCommands {
 			placeHolder: "Enter name of collection",
 			ignoreFocusOut: true
 		});
-		db.createCollection(collectionName);
-		explorer.refresh(db);
-	}
-
-	public static async deleteMongoCollection(collection: MongoCollectionNode, explorer: CosmosDBExplorer) {
-		const confirmed = await vscode.window.showWarningMessage(`Are you sure you want to delete collection ${collection.label}?`, "Yes");
-		if (confirmed === "Yes") {
-			const db = collection.db;
-			db.dropCollection(collection.id);
+		if (collectionName) {
+			let collectionNode = await db.createCollection(collectionName);
+			explorer.refresh(db);
+			connectToDatabase(db);
 		}
-		explorer.refresh(collection.db);
 	}
 
-	public static async createMongoDocument(collection: MongoCollectionNode, explorer: CosmosDBExplorer) {
+	public static async deleteMongoCollection(collectionNode: MongoCollectionNode, explorer: CosmosDBExplorer) {
+		const confirmed = await vscode.window.showWarningMessage(`Are you sure you want to delete collection ${collectionNode.label}?`, "Yes");
+		if (confirmed === "Yes") {
+			const db = collectionNode.db;
+			await db.dropCollection(collectionNode.id);
+			explorer.refresh(collectionNode.db);
+		}
+	}
+
+	public static async createMongoDocument(collectionNode: MongoCollectionNode, explorer: CosmosDBExplorer) {
 		const docId = await vscode.window.showInputBox({
 			placeHolder: "Enter a unique id for the document.",
+			prompt: "ID must be a single string of 12 bytes or 24 hex characters",
 			ignoreFocusOut: true
 		});
-
+		await collectionNode.collection.insertOne({ "_id": docId });
+		//await collectionNode.db.updateDocuments({ "_id": docId }, collectionNode.label);
+		explorer.refresh(collectionNode);
 	}
 }
 

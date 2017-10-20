@@ -63,7 +63,9 @@ export function activate(context: vscode.ExtensionContext) {
 	initAsyncCommand(context, 'cosmosDB.removeMongoServer', (node: INode) => removeMongoServer(node));
 	initAsyncCommand(context, 'cosmosDB.createMongoDatabase', (node: IMongoServer) => createMongoDatabase(node));
 	initAsyncCommand(context, 'cosmosDB.createDocDBDatabase', (node: CosmosDBResourceNode) => DocDBCommands.createDocDBDatabase(node, explorer));
+	initAsyncCommand(context, 'cosmosDB.createMongoCollection', (node: MongoDatabaseNode) => MongoCommands.createMongoCollection(node, explorer));
 	initAsyncCommand(context, 'cosmosDB.createDocDBCollection', (node: DocDBDatabaseNode) => DocDBCommands.createDocDBCollection(node, explorer));
+	initAsyncCommand(context, 'cosmosDB.createMongoDocument', (node: MongoCollectionNode) => MongoCommands.createMongoDocument(node, explorer));
 	initAsyncCommand(context, 'cosmosDB.createDocDBDocument', (node: DocDBCollectionNode) => DocDBCommands.createDocDBDocument(node, explorer));
 	initCommand(context, 'cosmosDB.openInPortal', (node: CosmosDBResourceNode) => openInPortal(node));
 	initAsyncCommand(context, 'cosmosDB.copyConnectionString', (node: CosmosDBResourceNode) => copyConnectionString(node));
@@ -72,6 +74,7 @@ export function activate(context: vscode.ExtensionContext) {
 	initAsyncCommand(context, 'cosmosDB.connectMongoDB', (element: MongoDatabaseNode) => connectToDatabase(element));
 	initAsyncCommand(context, 'cosmosDB.deleteMongoDB', (element: MongoDatabaseNode) => deleteDatabase(element));
 	initAsyncCommand(context, 'cosmosDB.deleteDocDBDatabase', (element: DocDBDatabaseNode) => DocDBCommands.deleteDocDBDatabase(element, explorer));
+	initAsyncCommand(context, 'cosmosDB.deleteMongoCollection', (element: MongoCollectionNode) => MongoCommands.deleteMongoCollection(element, explorer));
 	initAsyncCommand(context, 'cosmosDB.deleteDocDBCollection', (element: DocDBCollectionNode) => DocDBCommands.deleteDocDBCollection(element, explorer));
 	initAsyncCommand(context, 'cosmosDB.deleteDocDBDocument', (element: DocDBDocumentNode) => DocDBCommands.deleteDocDBDocument(element, explorer));
 	initCommand(context, 'cosmosDB.newMongoScrapbook', () => createScrapbook());
@@ -259,7 +262,7 @@ async function deleteDatabase(database: MongoDatabaseNode): Promise<void> {
 	}
 }
 
-async function connectToDatabase(database: MongoDatabaseNode) {
+export async function connectToDatabase(database: MongoDatabaseNode) {
 	if (database) {
 		connectedDb = database;
 		languageClient.connect(database);
