@@ -8,6 +8,7 @@ import { Command } from 'vscode';
 import { DocumentClient } from 'documentdb';
 import gremlin = require('gremlin');
 import { INode } from '../nodes';
+import * as util from "./../util";
 
 //asdf
 // export interface IGraphServer extends INode {
@@ -138,7 +139,8 @@ export class GraphNode implements INode {
 			if (err) return console.error(err);
 			console.log(results);
 			console.log();
-			s = results;
+			s = JSON.stringify(results, null, 2);
+			util.showResult(s, "results.graphson");
 		});
 
 		return Promise.resolve(s);
