@@ -109,8 +109,16 @@ export class MongoCommands {
 			ignoreFocusOut: true
 		});
 		await collectionNode.collection.insertOne({ "_id": docId });
-		//await collectionNode.db.updateDocuments({ "_id": docId }, collectionNode.label);
 		explorer.refresh(collectionNode);
+	}
+
+	public static async deleteMongoDocument(documentNode: MongoDocumentNode, explorer: CosmosDBExplorer) {
+		const confirmed = await vscode.window.showWarningMessage(`Are you sure you want to delete collection ${documentNode.label}?`, "Yes");
+		if (confirmed === "Yes") {
+			const coll = documentNode.collection;
+			await coll.collection.deleteOne({ "_id": documentNode.id });
+			explorer.refresh(documentNode.collection);
+		}
 	}
 }
 
