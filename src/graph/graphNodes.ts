@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { Command } from 'vscode';
 import { DocumentClient } from 'documentdb';
-import { gremlin } from 'gremlin';
+import gremlin = require('gremlin');
 import { INode } from '../nodes';
 
 //asdf
@@ -18,14 +18,37 @@ import { INode } from '../nodes';
 export class GraphDatabaseNode implements INode {
 	public readonly contextValue: string = "cosmosGraphDatabase";
 
-	constructor(readonly id: string, readonly _primaryMasterKey: string, readonly _endPoint: string, readonly server: INode) {
+	private _graphEndpoint: string;
+	private _graphPort: number;
+
+	constructor(readonly id: string, readonly _masterKey: string, readonly _documentEndpoint: string, readonly server: INode) {
+		this._parseEndpoint(_documentEndpoint);
 	}
 
-	getPrimaryMasterKey(): string {
-		return this._primaryMasterKey;
+	private _parseEndpoint(documentEndpoint: string): void {
+		// Document endpoint: https://<graphname>.documents.azure.com:443/
+		// Gremlin endpoint: stephwegraph1.graphs.azure.com
+		let [, address, , port] = this._documentEndpoint.match(/^[^:]+:\/\/([^:]+)(:([0-9]+))?\/?$/);
+		this._graphEndpoint = address.replace(".documents.azure.com", ".graphs.azure.com");
+		console.assert(this._graphEndpoint.match(/\.graphs\.azure\.com$/), "Unexpected endpoint format");
+		this._graphPort = parseInt(port || "443");
+		console.assert(this._graphPort > 0, "Unexpected port");
 	}
-	getEndpoint(): string {
-		return this._endPoint;
+
+	getMasterKey(): string {
+		return this._masterKey;
+	}
+
+	get documentEndpoint(): string {
+		return this._documentEndpoint;
+	}
+
+	get graphEndpoint(): string {
+		return this._graphEndpoint;
+	}
+
+	get graphPort(): number {
+		return this._graphPort;
 	}
 
 	get label(): string {
@@ -42,14 +65,14 @@ export class GraphDatabaseNode implements INode {
 
 	readonly collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
 
-	public getDbLink(): string {
+	public getGraphLink(): string {
 		return 'dbs/' + this.id;
 	}
 
 	async getChildren(): Promise<INode[]> {
-		const dbLink: string = this.getDbLink();
+		const dbLink: string = this.getGraphLink();
 		const parentNode = this;
-		const client = new DocumentClient(this.getEndpoint(), { masterKey: this.getPrimaryMasterKey() });
+		const client = new DocumentClient(this.documentEndpoint, { masterKey: this.getMasterKey() });
 		let collections = await this.listCollections(dbLink, client);
 		return collections.map(collection => new GraphNode(collection.id, parentNode));
 	}
@@ -67,12 +90,13 @@ export class GraphNode implements INode {
 
 	readonly collapsibleState = vscode.TreeItemCollapsibleState.None;
 
-	constructor(readonly id: string, readonly db: GraphDatabaseNode) {
+	constructor(readonly id: string, readonly graphDBNode: GraphDatabaseNode) {
 	}
 
 	readonly contextValue: string = "cosmosGraph";
 
 	get label(): string {
+		this.read();
 		return this.id + " cosmosGraph"; //asdf
 	}
 
@@ -84,35 +108,41 @@ export class GraphNode implements INode {
 	}
 
 	getCollLink(): string {
-		return this.db.getDbLink() + '/colls/' + this.id;
-	}
-
-	async getDocuments(): Promise<any> {
-		const dbLink: string = this.db.getDbLink();
-		const client = new DocumentClient(this.db.getEndpoint(), { masterKey: this.db.getPrimaryMasterKey() });
-		const collSelfLink = this.getCollLink();
-		const docs = await this.readOneCollection(collSelfLink, client);
-		return await docs;
+		return this.graphDBNode.getGraphLink() + '/colls/' + this.id;
 	}
 
 	async getChildren(): Promise<INode[]> {
 		return null;
 	}
 
-	async listDocuments(collSelfLink, client): Promise<any> {
-		let documents = await client.readDocuments(collSelfLink);
-		return await new Promise<any[]>((resolve, reject) => {
-			documents.toArray((err, cols: Array<Object>) => err ? reject(err) : resolve(cols));
-		});
-	}
+	private async read(): Promise<string> {
+		const config = {
+			endpoint: this.graphDBNode.graphEndpoint,
+			primaryKey: this.graphDBNode.getMasterKey(),
+			database: this.graphDBNode.id,
+			collection: this.id
+		};
 
-	async readOneCollection(selfLink, client): Promise<any> {
-		let documents = await client.readDocuments(selfLink, { maxItemCount: 20 });
-		return await new Promise<any[]>((resolve, reject) => {
-			documents.toArray((err, docs: Array<Object>) => err ? reject(err) : resolve(docs));
-		});
-	}
+		const client = gremlin.createClient(
+			this.graphDBNode.graphPort,
+			config.endpoint,
+			{
+				"session": false,
+				"ssl": this.graphDBNode.graphPort === 443 || this.graphDBNode.graphPort === 8080,
+				"user": `/dbs/${config.database}/colls/${config.collection}`,
+				"password": config.primaryKey
+			});
 
+		let s: string;
+		client.execute('g.V()', {}, (err, results) => {
+			if (err) return console.error(err);
+			console.log(results);
+			console.log();
+			s = results;
+		});
+
+		return Promise.resolve(s);
+	}
 }
 
 //asdf

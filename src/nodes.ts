@@ -16,7 +16,7 @@ import DocumentdbManagementClient = require("azure-arm-documentdb");
 import { DocDBDatabaseNode } from './docdb/nodes';
 import { GraphDatabaseNode } from './graph/graphNodes';
 import { DocumentClient } from 'documentdb';
-import GraphRbacManagementClient = require('azure-graph'); // asdf
+import GraphRbacManagementClient = require('azure-graph'); // asdf remove
 
 type Experience = "MongoDB" | "DocumentDB" | "Graph" | "Table";
 
@@ -150,8 +150,8 @@ export class CosmosDBAccountNode implements IMongoServer {
 		return result.primaryMasterKey;
 	}
 
-	async getEndpoint(): Promise<string> {
-		return await this._databaseAccount.documentEndpoint;
+	get documentEndpoint(): string {
+		return this._databaseAccount.documentEndpoint;
 	}
 
 	async getChildren(): Promise<INode[]> {
@@ -162,20 +162,22 @@ export class CosmosDBAccountNode implements IMongoServer {
 
 			case "cosmosDBDocumentServer":
 			case "cosmosGraphDatabaseServer":
-				return await this.getDocumentDatabaseNodesByExperience(await this.getEndpoint(), this.defaultExperience, this);
+				return await this.getDocumentDatabaseNodesByExperience();
 		}
 	}
 
 	// Can handle DocumentDB or graph nodes
-	private async  getDocumentDatabaseNodesByExperience(endpoint: string, experience: Experience, server: INode): Promise<INode[]> {
+	private async getDocumentDatabaseNodesByExperience(): Promise<INode[]> {
 		const masterKey = await this.getPrimaryMasterKey();
-		let databases = await this.listDatabases(masterKey);
+		const databases = await this.listDatabases(masterKey);
+		const documentEndpoint = this.documentEndpoint;
+		const experience = this.defaultExperience;
 		return databases.map(database => {
 			switch (experience) {
 				case "DocumentDB":
-					return new DocDBDatabaseNode(database.id, masterKey, endpoint, server);
+					return new DocDBDatabaseNode(database.id, masterKey, documentEndpoint, this);
 				case "Graph":
-					return new GraphDatabaseNode(database.id, masterKey, endpoint, server);
+					return new GraphDatabaseNode(database.id, masterKey, documentEndpoint, this);
 				default:
 					throw new Error("Unexpected experience");
 			}
@@ -183,7 +185,7 @@ export class CosmosDBAccountNode implements IMongoServer {
 	}
 
 	private async listDatabases(masterKey: string): Promise<INode[]> {
-		const client = new DocumentClient(this._databaseAccount.documentEndpoint, { masterKey: masterKey });
+		const client = new DocumentClient(this.documentEndpoint, { masterKey: masterKey });
 		const databases = await client.readDatabases();
 		return await new Promise<any[]>((resolve, reject) => {
 			databases.toArray((err, dbs: Array<Object>) => err ? reject(err) : resolve(dbs));
