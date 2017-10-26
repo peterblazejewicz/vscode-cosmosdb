@@ -25,6 +25,7 @@ import MongoDBLanguageClient from './mongo/languageClient';
 import { Reporter } from './telemetry';
 import { UserCancelledError } from './errors';
 import { DocDBCommands } from './docdb/commands';
+import { GraphView } from "./graph/GraphView";
 
 let connectedDb: MongoDatabaseNode = null;
 let languageClient: MongoDBLanguageClient = null;
@@ -37,6 +38,7 @@ enum DocumentType {
 	Mongo,
 	DocDB
 };
+let graphView: GraphView = null;
 
 export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(new Reporter(context));
@@ -45,11 +47,15 @@ export function activate(context: vscode.ExtensionContext) {
 
 	languageClient = new MongoDBLanguageClient(context);
 
-	explorer = new CosmosDBExplorer(azureAccount, context.globalState);
+	graphView = new GraphView(context);
+	context.subscriptions.push(this.graphView);
+
+	explorer = new CosmosDBExplorer(azureAccount, graphView, context.globalState);
 	context.subscriptions.push(azureAccount.onFiltersChanged(() => explorer.refresh()));
 	context.subscriptions.push(azureAccount.onStatusChanged(() => explorer.refresh()));
 	context.subscriptions.push(azureAccount.onSessionsChanged(() => explorer.refresh()));
 	vscode.window.registerTreeDataProvider('cosmosDBExplorer', explorer);
+
 
 	// Commands
 	initAsyncCommand(context, 'cosmosDB.createAccount', async () => {

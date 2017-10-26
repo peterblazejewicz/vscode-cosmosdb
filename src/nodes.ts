@@ -16,7 +16,9 @@ import DocumentdbManagementClient = require("azure-arm-documentdb");
 import { DocDBDatabaseNode } from './docdb/nodes';
 import { GraphDatabaseNode } from './graph/graphNodes';
 import { DocumentClient } from 'documentdb';
-import GraphRbacManagementClient = require('azure-graph'); // asdf remove
+//import GraphRbacManagementClient = require('azure-graph'); // asdf remove
+import { GraphView } from "./graph/GraphView";
+
 
 type Experience = "MongoDB" | "DocumentDB" | "Graph" | "Table";
 
@@ -33,7 +35,7 @@ export class SubscriptionNode implements INode {
 
 	readonly collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
 
-	constructor(private readonly subscriptionFilter?: AzureResourceFilter) {
+	constructor(private readonly _graphView: GraphView, private readonly subscriptionFilter?: AzureResourceFilter) {
 		this.id = subscriptionFilter.subscription.id;
 		this.label = subscriptionFilter.subscription.displayName;
 	}
@@ -58,7 +60,7 @@ export class SubscriptionNode implements INode {
 			const result = await Promise.all(resourceGroups.map(async group => {
 				let dbs = await docDBClient.databaseAccounts.listByResourceGroup(group.name);
 				dbs = dbs.sort((a, b) => a.name.localeCompare(b.name));
-				return Promise.all(dbs.map(async db => new CosmosDBAccountNode(this.subscriptionFilter, db, group.name)));
+				return Promise.all(dbs.map(async db => new CosmosDBAccountNode(this._graphView, this.subscriptionFilter, db, group.name)));
 			}));
 
 			nodes = [].concat(...result);
@@ -80,7 +82,9 @@ export class CosmosDBAccountNode implements IMongoServer {
 
 	private _connectionString: string;
 
-	constructor(private readonly _subscriptionFilter: AzureResourceFilter,
+	constructor(
+		private readonly _graphView: GraphView,
+		private readonly _subscriptionFilter: AzureResourceFilter,
 		private readonly _databaseAccount: docDBModels.DatabaseAccount,
 		private readonly _resourceGroupName: string) {
 		this.id = _databaseAccount.id;
@@ -177,7 +181,7 @@ export class CosmosDBAccountNode implements IMongoServer {
 				case "DocumentDB":
 					return new DocDBDatabaseNode(database.id, masterKey, documentEndpoint, this);
 				case "Graph":
-					return new GraphDatabaseNode(database.id, masterKey, documentEndpoint, this);
+					return new GraphDatabaseNode(database.id, masterKey, documentEndpoint, this._graphView, this);
 				default:
 					throw new Error("Unexpected experience");
 			}

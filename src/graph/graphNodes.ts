@@ -9,11 +9,28 @@ import { DocumentClient } from 'documentdb';
 import gremlin = require('gremlin');
 import { INode } from '../nodes';
 import * as util from "./../util";
+import { GraphView } from "./GraphView";
 
 //asdf
 // export interface IGraphServer extends INode {
 // 	getPrimaryMasterKey(): string;
 // 	getEndpoint(): string;
+// }
+
+// interface IResultsChannel {
+// 	showResults(s: string);
+// }
+
+// class ResultsChannel implements IResultsChannel {
+// 	private _graphViewer: GraphView;
+// 	constructor(context: vscode.ExtensionContext) {
+// 		this._graphViewer = new GraphView();
+// 		this._graphViewer.activate(context);
+// 	}
+
+// 	showResults(s: string) {
+// 		this._graphViewer.showResults(s);
+// 	}
 // }
 
 export class GraphDatabaseNode implements INode {
@@ -22,7 +39,8 @@ export class GraphDatabaseNode implements INode {
 	private _graphEndpoint: string;
 	private _graphPort: number;
 
-	constructor(readonly id: string, readonly _masterKey: string, readonly _documentEndpoint: string, readonly server: INode) {
+	// asdf pass in channel instead of context
+	constructor(readonly id: string, private readonly _masterKey: string, private readonly _documentEndpoint: string, private readonly _graphView: GraphView, readonly server: INode) {
 		this._parseEndpoint(_documentEndpoint);
 	}
 
@@ -54,6 +72,15 @@ export class GraphDatabaseNode implements INode {
 
 	get label(): string {
 		return this.id + " (cosmosGraphDatabase)"; // asdf
+	}
+
+	//asdf
+	// get resultsChannel(): IResultsChannel {
+	// 	return this._resultsChannel;
+	// }
+
+	get graphView(): GraphView {
+		return this._graphView;
 	}
 
 	get iconPath(): any {
@@ -140,7 +167,8 @@ export class GraphNode implements INode {
 			console.log(results);
 			console.log();
 			s = JSON.stringify(results, null, 2);
-			util.showResult(s, "results.graphson");
+			//util.showResult(s, "results.graphson");
+			this.graphDBNode.graphView.showResults(s);
 		});
 
 		return Promise.resolve(s);
@@ -178,3 +206,4 @@ export class GraphNode implements INode {
 // 		title: ''
 // 	};
 // }
+
