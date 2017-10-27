@@ -176,7 +176,7 @@ export class GraphNode implements INode {
 				console.log(results);
 				console.log();
 				s = JSON.stringify(results, null, 2);
-				this.graphDBNode.graphView.showResults("id#1", "Gremlin results", s);
+				this.graphDBNode.graphView.showResults("id#1", "Gremlin results", this.id, s);
 				resolve();
 			});
 		}

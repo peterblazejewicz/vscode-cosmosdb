@@ -12,6 +12,7 @@ const previewUri = scheme + '://';
 
 var results: string = null; // asdf
 var thisTitle: string = null;
+
 export class GraphView {
     public constructor(context: vscode.ExtensionContext) {
         let provider = new TextDocumentContentProvider();
@@ -24,7 +25,7 @@ export class GraphView {
         try {
             results = s;
             thisTitle = title;
-            vscode.commands.executeCommand('vscode.previewHtml', vscode.Uri.parse(previewUri + id), vscode.ViewColumn.One, title);
+            vscode.commands.executeCommand('vscode.previewHtml', vscode.Uri.parse(previewUri + id), vscode.ViewColumn.One, tab);
         } catch (reason) {
             vscode.window.showErrorMessage(reason);
         }
@@ -374,11 +375,11 @@ var html = `
     // ];
 
     var svg = d3.select("svg");
-    var t = d3.transition().duration(750);
-    var t2 = d3.transition().duration(50);
+    var t = d3.transition().duration(250);
+    var t2 = d3.transition().duration(550);
     var color = d3.scale.category20();
     var circleRadius = 5;
-    var separation = 60;
+    var separation = 100;
 
     var nodes = svg.selectAll(".node")
       .data(verticies)
@@ -389,17 +390,24 @@ var html = `
       });
     ;
     nodes.append("circle")
-      .attr("fill", "red")
+      .attr("fill", "black")
       .attr("cx", function (d, i, nodes) { return (i + 1) * separation; })
       .attr("cy", 50)
-      .attr("r",circleRadius)
+       .transition(t)
+       .delay(function (d, i) { return i * 150; })
+    .attr("r",circleRadius)
+       .attr("fill", function(d,i) {return color(i);})
       ;
-    nodes.append("text")
+    nodes
+    .append("text")
       .attr("fill", "white")
       .attr("dy", 50)
       .attr("dx", function (d, i, nodes) { return (i + 1) * separation; })
+      .attr("font-size",0)
       .text(function (d) { var s = d.properties.last[0].value; return s; })
-      .attr("font-size",8)
+    //   .transition(t2)
+    //   .delay(function (d, i) { return i * 150; })
+      .attr("font-size",12)
       ;
 
     // svg.selectAll("circle")
