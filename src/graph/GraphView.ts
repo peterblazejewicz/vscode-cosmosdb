@@ -8,12 +8,10 @@
 import * as vscode from 'vscode';
 
 const scheme = "vscode-cosmosdb-graphresults";
-const previewUri = vscode.Uri.parse(scheme + '://authority/graphresults');
+const previewUri = scheme + '://';
 
+var results: string = null; // asdf
 export class GraphView {
-
-    // this.previewWindow = new TextDocumentContentProvider();
-
     public constructor(context: vscode.ExtensionContext) {
         let provider = new TextDocumentContentProvider();
         let registration = vscode.workspace.registerTextDocumentContentProvider(scheme, provider);
@@ -21,9 +19,10 @@ export class GraphView {
         context.subscriptions.push(registration);
     }
 
-    public async showResults(s: string): Promise<void> {
+    public async showResults(id: string, title: string, s: string): Promise<void> {
         try {
-            vscode.commands.executeCommand('vscode.previewHtml', previewUri, vscode.ViewColumn.One, 'Gremlin Results');
+            results = s;
+            vscode.commands.executeCommand('vscode.previewHtml', vscode.Uri.parse(previewUri + id), vscode.ViewColumn.One, title);
         } catch (reason) {
             vscode.window.showErrorMessage(reason);
         }
@@ -34,6 +33,6 @@ export class GraphView {
 class TextDocumentContentProvider implements vscode.TextDocumentContentProvider {
     onDidChange?: vscode.Event<vscode.Uri>;
     provideTextDocumentContent(uri: vscode.Uri, token: vscode.CancellationToken): vscode.ProviderResult<string> {
-        return "These are <i>my</i> results";
+        return results;
     }
 }

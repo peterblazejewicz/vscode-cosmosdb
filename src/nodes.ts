@@ -38,6 +38,8 @@ export class SubscriptionNode implements INode {
 	constructor(private readonly _graphView: GraphView, private readonly subscriptionFilter?: AzureResourceFilter) {
 		this.id = subscriptionFilter.subscription.id;
 		this.label = subscriptionFilter.subscription.displayName;
+
+		this._graphView.showResults("testid", "Test Results", "hi there");//asdf
 	}
 
 	get iconPath(): any {
