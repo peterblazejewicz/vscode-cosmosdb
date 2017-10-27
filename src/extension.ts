@@ -19,6 +19,7 @@ import { CosmosDBExplorer } from './explorer';
 import { MongoCommands } from './mongo/commands';
 import { IMongoServer, MongoDatabaseNode, MongoCommand, MongoCollectionNode, MongoDocumentNode } from './mongo/nodes';
 import { DocDBDatabaseNode, DocDBCollectionNode, DocDBDocumentNode } from './docdb/nodes';
+import { GraphNode } from './graph/graphNodes';
 import { CosmosDBAccountNode, INode } from './nodes';
 import { DocumentClient } from 'documentdb';
 import MongoDBLanguageClient from './mongo/languageClient';
@@ -98,6 +99,13 @@ export function activate(context: vscode.ExtensionContext) {
 		lastOpenedDocDBDocument = document;
 		await util.showResult(JSON.stringify(document.data, null, 2), 'cosmos-document.json');
 		lastOpenedDocumentType = DocumentType.DocDB;
+	});
+
+	initAsyncCommand(context, 'graph.openExplorer', async (graph: GraphNode) => {
+		if (!graph) {
+			return; // asdf
+		}
+		graph.showExplorer();
 	});
 }
 

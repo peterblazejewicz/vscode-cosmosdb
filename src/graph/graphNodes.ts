@@ -71,7 +71,7 @@ export class GraphDatabaseNode implements INode {
 	}
 
 	get label(): string {
-		return this.id + " (cosmosGraphDatabase)"; // asdf
+		return this.id;
 	}
 
 	//asdf
@@ -124,8 +124,7 @@ export class GraphNode implements INode {
 	readonly contextValue: string = "cosmosGraph";
 
 	get label(): string {
-		this.read();
-		return this.id + " cosmosGraph"; //asdf
+		return this.id;
 	}
 
 	get iconPath(): any {
@@ -139,11 +138,17 @@ export class GraphNode implements INode {
 		return this.graphDBNode.getGraphLink() + '/colls/' + this.id;
 	}
 
-	async getChildren(): Promise<INode[]> {
-		return null;
+	public async showExplorer() {
+		this.execute();
 	}
 
-	private async read(): Promise<string> {
+	readonly command: Command = {
+		command: 'graph.openExplorer',
+		arguments: [this],
+		title: ''
+	};
+
+	private async execute(): Promise<void> {
 		const config = {
 			endpoint: this.graphDBNode.graphEndpoint,
 			primaryKey: this.graphDBNode.getMasterKey(),
@@ -162,48 +167,18 @@ export class GraphNode implements INode {
 			});
 
 		let s: string;
-		client.execute('g.V()', {}, (err, results) => {
-			if (err) return console.error(err);
-			console.log(results);
-			console.log();
-			s = JSON.stringify(results, null, 2);
-			//util.showResult(s, "results.graphson");
-			this.graphDBNode.graphView.showResults("id#1", "Gremlin results", s);
-		});
-
-		return Promise.resolve(s);
+		return new Promise<void>((resolve, reject) => {
+			client.execute('g.V()', {}, (err, results) => {
+				if (err) {
+					console.error(err);
+					reject(new Error(err));
+				}
+				console.log(results);
+				console.log();
+				s = JSON.stringify(results, null, 2);
+				this.graphDBNode.graphView.showResults("id#1", "Gremlin results", s);
+				resolve();
+			});
+		}
 	}
 }
-
-//asdf
-// export class DocDBDocumentNode implements INode {
-// 	data: IDocDBDocumentSpec;
-// 	constructor(readonly id: string, readonly collection: DocDBCollectionNode, payload: IDocDBDocumentSpec) {
-// 		this.data = payload;
-// 	}
-
-// 	readonly contextValue: string = "cosmosDBDocument";
-
-// 	get label(): string {
-// 		return this.id;
-// 	}
-
-// 	getDocLink(): string {
-// 		return this.collection.getCollLink() + '/docs/' + this.id;
-// 	}
-
-// 	get iconPath(): any {
-// 		return {
-// 			light: path.join(__filename, '..', '..', '..', '..', 'resources', 'icons', 'theme-agnostic', 'Azure DocumentDB - document 2 LARGE.svg'),
-// 			dark: path.join(__filename, '..', '..', '..', '..', 'resources', 'icons', 'theme-agnostic', 'Azure DocumentDB - document 2 LARGE.svg'),
-// 		};
-// 	}
-// 	readonly collapsibleState = vscode.TreeItemCollapsibleState.None;
-
-// 	readonly command: Command = {
-// 		command: 'cosmosDB.openDocDBDocument',
-// 		arguments: [this],
-// 		title: ''
-// 	};
-// }
-

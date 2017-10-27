@@ -39,7 +39,7 @@ export class SubscriptionNode implements INode {
 		this.id = subscriptionFilter.subscription.id;
 		this.label = subscriptionFilter.subscription.displayName;
 
-		this._graphView.showResults("testid", "Test Results", "hi there");//asdf
+		//this._graphView.showResults("testid", "Test Results", "hi there");//asdf
 	}
 
 	get iconPath(): any {
@@ -91,7 +91,7 @@ export class CosmosDBAccountNode implements IMongoServer {
 		private readonly _resourceGroupName: string) {
 		this.id = _databaseAccount.id;
 		this.tenantId = _subscriptionFilter.session.tenantId;
-		this.label = "CosmosDBAccountNode" + `${_databaseAccount.name} (${_resourceGroupName})`; //asdf
+		this.label = `${_databaseAccount.name} (${_resourceGroupName})`;
 		this.defaultExperience = <Experience>_databaseAccount.tags.defaultExperience;
 
 		switch (this.defaultExperience) {
@@ -107,7 +107,7 @@ export class CosmosDBAccountNode implements IMongoServer {
 			default:
 				this.contextValue = "cosmosDBGenericResource";
 		}
-		this.label += "/" + this.contextValue; //asdf
+
 		this.collapsibleState = this.contextValue === "cosmosDBGenericResource" ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Collapsed;
 	}
 
