@@ -11,6 +11,7 @@ const scheme = "vscode-cosmosdb-graphresults";
 const previewUri = scheme + '://';
 
 var results: string = null; // asdf
+var thisTitle: string = null;
 export class GraphView {
     public constructor(context: vscode.ExtensionContext) {
         let provider = new TextDocumentContentProvider();
@@ -19,9 +20,10 @@ export class GraphView {
         context.subscriptions.push(registration);
     }
 
-    public async showResults(id: string, title: string, s: string): Promise<void> {
+    public async showResults(id: string, tab: string, title: string, s: string): Promise<void> {
         try {
             results = s;
+            thisTitle = title;
             vscode.commands.executeCommand('vscode.previewHtml', vscode.Uri.parse(previewUri + id), vscode.ViewColumn.One, title);
         } catch (reason) {
             vscode.window.showErrorMessage(reason);
@@ -32,11 +34,13 @@ export class GraphView {
 class TextDocumentContentProvider implements vscode.TextDocumentContentProvider {
     onDidChange?: vscode.Event<vscode.Uri>;
     provideTextDocumentContent(uri: vscode.Uri, token: vscode.CancellationToken): vscode.ProviderResult<string> {
-        return html.replace("$$REPLACE$$", `json = ${results};`);
+        return html.replace("$$REPLACE$$", `json = ${results};`)
+            .replace("$$title$$", thisTitle)
     }
 }
 
-var html = `<!DOCTYPE html>
+var html = `
+<!DOCTYPE html>
 <html>
 
 <head>
@@ -58,6 +62,7 @@ var html = `<!DOCTYPE html>
   <style>
     body {
       font-family: Arial, Helvetica, sans-serif;
+      background: black;
     }
 
     textarea {
@@ -66,12 +71,20 @@ var html = `<!DOCTYPE html>
 
     h5 {
       margin-bottom: 0;
+      color: white;
+    }
+    h1 {
+      color: white;
     }
   </style>
 </head>
 
 <body>
-  <svg width="100%" height="300px"></svg>
+    <h1>$$title$$</h1>
+  <div id="graph">
+    <div></div>
+    <svg width="100%" height="300px"></svg>
+  </div>
   <h5>JSON</h5>
   <textarea id="jsonResults" style="height:300px; width: 100%;"></textarea>
 
@@ -344,8 +357,8 @@ var html = `<!DOCTYPE html>
 
     var json = portalResults;
     try {
-$$REPLACE$$
-    }catch(err) {}
+      $$REPLACE$$
+    } catch (err) { }
 
     jsonResults.value = JSON.stringify(json, null, 4);
 
@@ -362,19 +375,57 @@ $$REPLACE$$
 
     var svg = d3.select("svg");
     var t = d3.transition().duration(750);
+    var t2 = d3.transition().duration(50);
+    var color = d3.scale.category20();
+    var circleRadius = 5;
+    var separation = 60;
 
-    svg.selectAll("circle")
-      .data(nodes)
-      .enter()
-      .append("circle")
+    var nodes = svg.selectAll(".node")
+      .data(verticies)
+      .enter().append("g")
+      .attr("class", "node")
       .attr("cx", function (d, i, nodes) {
-        return (i + 1) * 50;
-      })
+        return (i + 1) * 65;
+      });
+    ;
+    nodes.append("circle")
+      .attr("fill", "red")
+      .attr("cx", function (d, i, nodes) { return (i + 1) * separation; })
       .attr("cy", 50)
-      .transition(t)
-      .delay(function (d, i) { return i * 500; })
-      .style("fill", function (d) { return d.color; })
-      .attr("r", function (d) { return d.width; })
+      .attr("r",circleRadius)
+      ;
+    nodes.append("text")
+      .attr("fill", "white")
+      .attr("dy", 50)
+      .attr("dx", function (d, i, nodes) { return (i + 1) * separation; })
+      .text(function (d) { var s = d.properties.last[0].value; return s; })
+      .attr("font-size",8)
+      ;
+
+    // svg.selectAll("circle")
+    //   .data(verticies)
+    //   .enter().append("circle")
+    //   .attr("cx", function (d, i, nodes) {
+    //     return (i + 1) * 65;
+    //   })
+    //   .attr("fill", "black")
+    //   .attr("cy", 50)
+    //   .transition(t)
+    //   .delay(function (d, i) { return i * 150; })
+    //   //.style("fill", function (d) { return "red"; })
+    //   .attr("r", function (d) { return 30;})//return d.width; })
+    //   .transition(t2)
+    //   .attr("fill", function(d,i) {return color(i);})
+    //   ;
+
+    //   d3.select("#graph div")
+    //   .selectAll("span")
+    //   .data(verticies)
+    //   .enter().append("span")
+    //   .attr("cx", function (d, i, nodes) {
+    //     return (i + 1) * 65;
+    //   })
+    //   .text(function(d) { var s =  d.properties.last[0].value; return s;} )
 
     //   var t = d3.transition()
     // .duration(750)
@@ -385,4 +436,5 @@ $$REPLACE$$
   </script>
 </body>
 
-</html>`;
+</html>
+`;
